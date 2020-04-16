@@ -1,0 +1,52 @@
+jobs:
+  - job: HelloWorld
+    strategy:
+      maxParallel: 2
+      matrix:
+        Windows-0:
+          image: contrast-windows-vs2019:master
+        Windows-1:
+          image: contrast-windows-vs2019:master
+        Windows-2:
+          image: contrast-windows-vs2019:master
+        Windows-3:
+          image: contrast-windows-vs2019:master
+        Windows-4:
+          image: contrast-windows-vs2019:master
+        Windows-5:
+          image: contrast-windows-vs2019:master
+        Windows-6:
+          image: contrast-windows-vs2019:master
+        Windows-7:
+          image: contrast-windows-vs2019:master
+        Windows-8:
+          image: contrast-windows-vs2019:master
+        Windows-9:
+          image: contrast-windows-vs2019:master
+    pool:
+      name: Azure Docker Build Servers
+      demands:
+        - Agent.OS -equals Windows_NT
+    container:
+      image: $(image)
+      endpoint: Azure Docker Registry (contrastdotnet.azurecr.io)
+      options: --volume C:\cache\NugetGlobalCache:C:\Users\ContainerAdministrator\.nuget\packages
+    steps:
+      - powershell: |
+          dotnet build
+          $info = Start-Process dotnet `
+                                -ArgumentList (Resolve-Path "bin\Debug\netcoreapp3.0\HelloWorld.dll") `
+                                -NoNewWindow `
+                                -PassThru
+          Write-host "Setting PID to $($info.Id)"
+          Write-Host ('##vso[task.setvariable variable=pid]' + $info.Id)
+        timeoutInMinutes: 1
+      - powershell: |
+          Write-Host 'Running application should exist under the PID of $(pid).'
+          Get-Process -Id $(pid)
+          if (-Not $?) {
+            exit 1
+          }
+          exit 0
+        condition: always()
+        timeoutInMinutes: 1
